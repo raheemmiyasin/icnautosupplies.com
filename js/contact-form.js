@@ -46,15 +46,23 @@
 	}
 
 	async function init() {
-		try {
-			const res = await fetch("/api/contact-config");
-			if (res.ok) {
-				const config = await res.json();
-				await loadTurnstile(config.turnstileSiteKey);
+		const container = document.getElementById("contact-turnstile");
+		const embeddedKey = container?.dataset.sitekey;
+		let siteKey = embeddedKey || "";
+
+		if (!siteKey) {
+			try {
+				const res = await fetch("/api/contact-config");
+				if (res.ok) {
+					const config = await res.json();
+					siteKey = config.turnstileSiteKey || "";
+				}
+			} catch {
+				// Turnstile is optional; form still works with honeypot
 			}
-		} catch {
-			// Turnstile is optional; form still works with honeypot
 		}
+
+		await loadTurnstile(siteKey);
 	}
 
 	form.addEventListener("submit", async function (event) {
