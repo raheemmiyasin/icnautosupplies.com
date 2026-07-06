@@ -4,5 +4,3 @@ pages_build_output_dir = "."
 
 [vars]
 CONTACT_FROM_NAME = "ICN Auto Supplies Website"
-# Replace with your Turnstile site key, or use Cloudflare test key for development
-TURNSTILE_SITE_KEY = "1x00000000000000000000AA"

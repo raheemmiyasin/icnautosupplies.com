@@ -10,20 +10,6 @@ function jsonResponse(body, status = 200) {
 	});
 }
 
-async function verifyTurnstile(token, secret, ip) {
-	const form = new FormData();
-	form.append("secret", secret);
-	form.append("response", token);
-	if (ip) form.append("remoteip", ip);
-
-	const result = await fetch(
-		"https://challenges.cloudflare.com/turnstile/v0/siteverify",
-		{ method: "POST", body: form },
-	);
-	const data = await result.json();
-	return data.success === true;
-}
-
 export async function onRequestOptions() {
 	return new Response(null, {
 		status: 204,
@@ -45,7 +31,7 @@ export async function onRequestPost(context) {
 		return jsonResponse({ ok: false, error: "Invalid request body." }, 400);
 	}
 
-	const { name, email, message, turnstileToken, website } = payload;
+	const { name, email, message, website } = payload;
 
 	if (website) {
 		return jsonResponse({ ok: true });
@@ -61,17 +47,6 @@ export async function onRequestPost(context) {
 
 	if (name.length > 200 || email.length > 254 || message.length > 5000) {
 		return jsonResponse({ ok: false, error: "One or more fields are too long." }, 400);
-	}
-
-	if (env.TURNSTILE_SECRET_KEY) {
-		if (!turnstileToken) {
-			return jsonResponse({ ok: false, error: "Please complete the security check." }, 400);
-		}
-		const ip = request.headers.get("CF-Connecting-IP");
-		const valid = await verifyTurnstile(turnstileToken, env.TURNSTILE_SECRET_KEY, ip);
-		if (!valid) {
-			return jsonResponse({ ok: false, error: "Security check failed. Please try again." }, 403);
-		}
 	}
 
 	const accessKey = env.WEB3FORMS_ACCESS_KEY;
