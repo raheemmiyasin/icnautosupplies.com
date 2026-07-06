@@ -74,58 +74,36 @@ export async function onRequestPost(context) {
 		}
 	}
 
-	const toEmail = env.CONTACT_TO_EMAIL || "icnautosupplies@gmail.com";
-	const fromEmail = env.CONTACT_FROM_EMAIL || "noreply@icnautosupplies.com";
-	const fromName = env.CONTACT_FROM_NAME || "ICN Auto Supplies Website";
-
-	const subject = `Website enquiry from ${name.trim()}`;
-	const text = [
-		`Name: ${name.trim()}`,
-		`Email: ${email.trim()}`,
-		"",
-		"Message:",
-		message.trim(),
-	].join("\n");
-
-	const html = `
-		<h2>New contact form submission</h2>
-		<p><strong>Name:</strong> ${escapeHtml(name.trim())}</p>
-		<p><strong>Email:</strong> ${escapeHtml(email.trim())}</p>
-		<p><strong>Message:</strong></p>
-		<p>${escapeHtml(message.trim()).replace(/\n/g, "<br>")}</p>
-	`;
+	const accessKey = env.WEB3FORMS_ACCESS_KEY;
+	if (!accessKey) {
+		console.error("WEB3FORMS_ACCESS_KEY is not configured");
+		return jsonResponse(
+			{ ok: false, error: "Contact form is not configured yet. Please email us directly." },
+			503,
+		);
+	}
 
 	try {
-		const accountId = env.CLOUDFLARE_ACCOUNT_ID;
-		const apiToken = env.CLOUDFLARE_API_TOKEN;
-
-		if (!accountId || !apiToken) {
-			throw new Error("Email service is not configured.");
-		}
-
-		const response = await fetch(
-			`https://api.cloudflare.com/client/v4/accounts/${accountId}/email/sending/send`,
-			{
-				method: "POST",
-				headers: {
-					Authorization: `Bearer ${apiToken}`,
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					from: { address: fromEmail, name: fromName },
-					to: [{ address: toEmail }],
-					reply_to: { address: email.trim(), name: name.trim() },
-					subject,
-					text,
-					html,
-				}),
+		const response = await fetch("https://api.web3forms.com/submit", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Accept: "application/json",
 			},
-		);
+			body: JSON.stringify({
+				access_key: accessKey,
+				name: name.trim(),
+				email: email.trim(),
+				message: message.trim(),
+				subject: `Website enquiry from ${name.trim()}`,
+				from_name: env.CONTACT_FROM_NAME || "ICN Auto Supplies Website",
+			}),
+		});
 
 		const result = await response.json();
 		if (!response.ok || !result.success) {
-			console.error("Email API error:", result);
-			throw new Error("Email API request failed");
+			console.error("Web3Forms error:", result);
+			throw new Error(result.message || "Email delivery failed");
 		}
 	} catch (err) {
 		console.error("Email send failed:", err);
@@ -136,12 +114,4 @@ export async function onRequestPost(context) {
 	}
 
 	return jsonResponse({ ok: true, message: "Thank you! Your message has been sent." });
-}
-
-function escapeHtml(value) {
-	return value
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;");
 }
