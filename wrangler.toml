@@ -1,0 +1,11 @@
+name = "icnautosupplies"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "."
+
+[vars]
+CONTACT_FROM_EMAIL = "noreply@icnautosupplies.com"
+CONTACT_FROM_NAME = "ICN Auto Supplies Website"
+CONTACT_TO_EMAIL = "icnautosupplies@gmail.com"
+CLOUDFLARE_ACCOUNT_ID = "369bf6ac18b992cc631275098d925cfd"
+# Replace with your Turnstile site key, or use Cloudflare test key for development
+TURNSTILE_SITE_KEY = "1x00000000000000000000AA"
